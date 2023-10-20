@@ -103,9 +103,12 @@ class StreamConnection extends AbstractConnection
     protected function createStreamSocket(ParametersInterface $parameters, $address, $flags)
     {
         $timeout = (isset($parameters->timeout) ? (float) $parameters->timeout : 5.0);
-        $context = stream_context_create(['socket' => ['tcp_nodelay' => (bool) $parameters->tcp_nodelay]]);
-
-        if (!$resource = @stream_socket_client($address, $errno, $errstr, $timeout, $flags, $context)) {
+        // $context = stream_context_create(['socket' => ['tcp_nodelay' => (bool) $parameters->tcp_nodelay]]);
+        // if (!$resource = @stream_socket_client($address, $errno, $errstr, $timeout, $flags, $context)) {
+        $address = str_replace("tcp://", "", $address); // 移除 "tcp://"
+        list($host, $port) = explode(":", $address);
+        $port = (int)$port; // 强制将$port转换为整数
+        if (!$resource = @fsockopen($host, $port, $errno, $errstr, $timeout)) {
             $this->onConnectionError(trim($errstr), $errno);
         }
 
@@ -119,7 +122,7 @@ class StreamConnection extends AbstractConnection
 
         return $resource;
     }
-
+    
     /**
      * Initializes a TCP stream resource.
      *
